@@ -14,6 +14,7 @@ use termimad::{Area, MadSkin, MadView};
 use walkdir::WalkDir;
 use webbrowser;
 
+// i like me a big a** main file hehe!
 fn get_dir_path() -> String {
     let path = dirs::home_dir().unwrap().to_str().unwrap().to_string() + "/.thebook/";
     path
@@ -120,7 +121,69 @@ fn get_files(folder_path: &String) -> Vec<String> {
     files
 }
 
-fn parse_listings(sections: &mut Vec<Section>) {}
+fn get_code_block(flag: String) -> String {
+    let mut theflag: &str = &flag.trim();
+
+    if flag.contains("rustdoc") {
+        theflag = theflag.strip_prefix("{{#rustdoc_include ../").unwrap();
+    } else {
+        theflag = theflag.strip_prefix("{{#include ../").unwrap();
+    }
+
+    theflag = theflag.strip_suffix("}}").unwrap();
+
+    if theflag.contains(":") {
+        (theflag, _) = theflag.split_once(":").unwrap();
+    }
+
+    let code_path = get_book_path() + theflag;
+
+    let code = std::fs::read_to_string(code_path).unwrap();
+
+    code
+}
+
+fn parse_listings(section: &mut Section) {
+    let content = &section.content.as_bytes();
+    let mut new_content: Vec<u8> = Vec::new();
+
+    let mut flag: Vec<u8> = Vec::new();
+
+    let mut writing: bool = true;
+
+    for (index, character) in content.iter().enumerate() {
+        if index + 2 < content.len() && content[index + 1] == b'{' && content[index + 2] == b'{' {
+            writing = false;
+        }
+
+        if index > 0 && content[index - 1] == b'}' && content[index - 2] == b'}' {
+            let new_flag = std::str::from_utf8(&flag).unwrap().to_string();
+
+            let code_block = get_code_block(new_flag);
+            let code = code_block.as_bytes();
+
+            new_content.push(b'\n');
+
+            for item in code {
+                new_content.push(*item)
+            }
+
+            flag = Vec::new();
+
+            writing = true;
+        }
+
+        if !writing {
+            flag.push(*character);
+        }
+
+        if writing {
+            new_content.push(*character);
+        }
+    }
+
+    section.content = std::str::from_utf8(&new_content).unwrap().to_string();
+}
 
 // returns a list of markdown strings
 fn search_book(words: &Vec<String>) -> Vec<Section> {
@@ -139,7 +202,9 @@ fn search_book(words: &Vec<String>) -> Vec<Section> {
         }
     }
 
-    parse_listings(&mut final_sections);
+    for (_index, section) in final_sections.iter_mut().enumerate() {
+        parse_listings(section);
+    }
 
     final_sections
 }
@@ -358,17 +423,21 @@ fn main() {
 
         println!("Found {} results", final_sections.len());
 
+        if final_sections.len() == 0 {
+            return;
+        }
+
         let mut cursor: u32 = 0;
         loop {
             let content = &final_sections[cursor as usize].content;
 
-            let debug = format!("Result {} of {}", cursor + 1, final_sections.len())
+            let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
                 + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
                 + &format!(" for {:?}", args)
                 + &format!(" | Change results with <-- and --> arrow keys or A and D")
                 + &format!(" | Close The Book with C ");
 
-            let text = content.clone() + &debug;
+            let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
 
             cursor = print_markdown(&final_sections, &text, cursor);
         }
