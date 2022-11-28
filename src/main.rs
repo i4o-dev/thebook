@@ -261,9 +261,29 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
                         break;
                     }
                 }
+
+                KeyCode::Right => {
+                    if new_cursor + 1 < length {
+                        new_cursor += 1;
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+                KeyCode::Left => {
+                    if new_cursor != 0 {
+                        new_cursor -= 1;
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+
                 KeyCode::Char('c') => {
                     std::process::exit(0x0100);
-                } //panic!("program was closed"),
+                }
+
+                KeyCode::Char('o') => open_book(),
 
                 _ => {
                     println!("invalid key!")
