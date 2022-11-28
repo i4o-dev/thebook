@@ -121,69 +121,48 @@ fn get_files(folder_path: &String) -> Vec<String> {
 }
 
 // returns a list of markdown strings
-fn search_book(words: &Vec<String>) -> Vec<Page> {
+fn search_book(words: &Vec<String>) -> Vec<Section> {
     let folder_path = get_book_path() + "src";
-    let pages = get_files(&folder_path);
-    let mut new_pages: Vec<Page> = Vec::new();
+    let files = get_files(&folder_path);
 
-    for page in pages {
-        let mentions = search_page(&page, &words);
+    let mut final_results = Vec::new();
 
-        if mentions > 0 {
-            let content = std::fs::read_to_string(&page).unwrap();
-            let new_page = Page { content, mentions };
+    for file in files {
+        let sections: Vec<Section> = search_page(&file, &words);
 
-            new_pages.push(new_page);
+        for section in sections {
+            if section.mentions > 1 {
+                final_results.push(section)
+            }
         }
     }
 
-    new_pages.sort_by_key(|i| i.mentions);
-    new_pages.reverse();
-
-    new_pages
-}
-
-#[derive(Debug)]
-struct Page {
-    content: String,
-    mentions: u32,
+    final_results
 }
 
 // returns how many times all queries were mentioned in this page
 // TODO: introduce bias by checking titles/headings and rewarding pages that have queries in their headings with 20 points
 // TODO: mentions of queries in the file path should also add bias of 20 points per query mention
 // TODO: introduce FAQ bias where certain common questions reward certain pages with points, such as 'what is ownership' should reward chapter 4 page 1 with 40 points
-fn search_page(page_path: &String, words: &Vec<String>) -> u32 {
+fn search_page(page_path: &String, queries: &Vec<String>) -> Vec<Section> {
     let page_content = std::fs::read_to_string(&page_path).unwrap();
-    let mut mentions: u32 = 0;
 
-    for query in words {
+    let mut mentions = 0;
+
+    for query in queries {
         if page_content.contains(query) {
             mentions += 1;
         }
     }
 
-    mentions
-}
-
-fn search_section(content: &String, words: &Vec<String>) -> u32 {
-    let mut mentions: u32 = 0;
-
-    for query in words {
-        if content.contains(query) {
-            mentions += 1;
-        }
+    if mentions == 0 {
+        return Vec::new();
     }
 
-    mentions
-}
-
-fn prepare_content(page: &mut Page, query: &Vec<String>) -> Vec<Section> {
     let mut sections: Vec<String> = Vec::new();
-
     let mut current_section: Vec<u8> = Vec::new();
 
-    let content = page.content.as_bytes();
+    let content = page_content.as_bytes();
     for (index, character) in content.iter().enumerate() {
         if content[index] == 35 && content[index + 1] == 35 {
             let section = std::str::from_utf8(&current_section).unwrap().to_string();
@@ -197,14 +176,31 @@ fn prepare_content(page: &mut Page, query: &Vec<String>) -> Vec<Section> {
     let mut valid_sections: Vec<Section> = Vec::new();
 
     for section in sections {
-        let mentions = search_section(&section, query);
-        if mentions > 0 {
-            let new_section = Section {
-                content: section,
-                mentions,
-            };
+        let new_section = Section {
+            content: section,
+            mentions,
+        };
 
+        if new_section.content.len() > 5 {
             valid_sections.push(new_section);
+        }
+    }
+
+    // reward query mention in file path
+    for mut valid_section in valid_sections.as_mut_slice() {
+        for query in queries {
+            if page_path.contains(query) {
+                valid_section.mentions += 20
+            }
+        }
+    }
+
+    // reward query mention in section content
+    for mut valid_section in valid_sections.as_mut_slice() {
+        for query in queries {
+            if valid_section.content.contains(query) {
+                valid_section.mentions += 2
+            }
         }
     }
 
@@ -280,6 +276,10 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
                 }
 
                 KeyCode::Char('c') => {
+                    terminal::disable_raw_mode().unwrap();
+                    queue!(writer, LeaveAlternateScreen).unwrap();
+                    writer.flush().unwrap();
+
                     std::process::exit(0x0100);
                 }
 
@@ -316,16 +316,7 @@ fn main() {
     } else {
         println!("searching book for {:?}", &args);
 
-        let results = search_book(&args);
-
-        let mut final_results: Vec<Section> = Vec::new();
-
-        for mut page in results {
-            let page_content = prepare_content(&mut page, &args);
-            for i in page_content {
-                final_results.push(i)
-            }
-        }
+        let mut final_results = search_book(&args);
 
         final_results.sort_by_key(|i| i.mentions);
         final_results.reverse();
@@ -334,9 +325,15 @@ fn main() {
 
         let mut cursor: u32 = 0;
         loop {
-            let text = &final_results[cursor as usize].content;
+            let content = &final_results[cursor as usize].content;
 
-            let text = text.clone() + &format!("Result {} of {}", cursor + 1, final_results.len());
+            let debug = format!("Result {} of {}", cursor + 1, final_results.len())
+                + &format!(" | Scored {} pts", final_results[cursor as usize].mentions)
+                + &format!(" for {:?}", args)
+                + &format!(" | Change results with <-- and --> arrow keys or A and D")
+                + &format!(" | Close The Book with C ");
+
+            let text = content.clone() + &debug;
 
             cursor = print_markdown(&final_results, &text, cursor);
         }
