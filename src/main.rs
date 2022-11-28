@@ -199,7 +199,7 @@ fn search_page(page_path: &String, queries: &Vec<String>) -> Vec<Section> {
     for mut valid_section in valid_sections.as_mut_slice() {
         for query in queries {
             if valid_section.content.contains(query) {
-                valid_section.mentions += 2
+                valid_section.mentions += 4
             }
         }
     }
