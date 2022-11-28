@@ -1,0 +1,20 @@
+[package]
+name = "thebook"
+version = "0.1.0"
+edition = "2021"
+authors = ["Hiro <yirohido@gmail.com>"]
+license = "MIT"
+description = "Read the book from the terminal, offline"
+readme = "README.md"
+homepage = "https://github.com/0xhiro/thebook"
+repository = "https://github.com/0xhiro/thebook"
+keywords = ["rust", "thebook", "cli" , "learn rust", "rust book"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+dirs = "4.0.0"
+git2 = "0.15.0"
+webbrowser = "0.8.2"
+termimad = "0.20.3"
+crossterm = "0.23.1"
+walkdir = "2.3.2"
