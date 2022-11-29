@@ -1,10 +1,10 @@
 [package]
 name = "thebook"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Hiro <yirohido@gmail.com>"]
 license = "MIT"
-description = "Read the book from the terminal, offline"
+description = "Search and read The Rust Book from the terminal"
 readme = "README.md"
 homepage = "https://github.com/0xhiro/thebook"
 repository = "https://github.com/0xhiro/thebook"
