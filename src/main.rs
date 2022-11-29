@@ -209,10 +209,6 @@ fn search_book(words: &Vec<String>) -> Vec<Section> {
     final_sections
 }
 
-// returns how many times all queries were mentioned in this page
-// TODO: introduce bias by checking titles/headings and rewarding pages that have queries in their headings with 20 points
-// TODO: mentions of queries in the file path should also add bias of 20 points per query mention
-// TODO: introduce FAQ bias where certain common questions reward certain pages with points, such as 'what is ownership' should reward chapter 4 page 1 with 40 points
 fn search_page(page_path: &String, queries: &Vec<String>) -> Vec<Section> {
     let page_content = std::fs::read_to_string(&page_path).unwrap();
 
@@ -233,12 +229,17 @@ fn search_page(page_path: &String, queries: &Vec<String>) -> Vec<Section> {
 
     let content = page_content.as_bytes();
     for (index, character) in content.iter().enumerate() {
-        if content[index] == b'#' && content[index + 1] == b'#' {
+        if content.len() > index + 2 && content[index + 1] == b'#' && content[index + 2] == b'#' {
             let section = std::str::from_utf8(&current_section).unwrap().to_string();
             sections.push(section);
             current_section = Vec::new();
-        } else {
-            current_section.push(*character);
+        }
+        current_section.push(*character);
+
+        if index == content.len() - 1 {
+            let section = std::str::from_utf8(&current_section).unwrap().to_string();
+            sections.push(section);
+            current_section = Vec::new();
         }
     }
 
@@ -311,6 +312,46 @@ fn search_page(page_path: &String, queries: &Vec<String>) -> Vec<Section> {
 struct Section {
     content: String,
     mentions: u32,
+}
+
+fn main() {
+    let mut args: Vec<String> = env::args().collect();
+    args.remove(0);
+
+    verify_dir();
+    verify_book();
+
+    if args.len() == 0 {
+        open_book()
+    } else {
+        println!("searching book for {:?}", &args);
+
+        let mut final_sections = search_book(&args);
+
+        final_sections.sort_by_key(|i| i.mentions);
+        final_sections.reverse();
+
+        println!("Found {} results", final_sections.len());
+
+        if final_sections.len() == 0 {
+            return;
+        }
+
+        let mut cursor: u32 = 0;
+        loop {
+            let content = &final_sections[cursor as usize].content;
+
+            let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
+                + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
+                + &format!(" for {:?}", args)
+                + &format!(" | Change results with <-- and --> arrow keys or A and D")
+                + &format!(" | Close The Book with C ");
+
+            let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
+
+            cursor = print_markdown(&final_sections, &text, cursor);
+        }
+    }
 }
 
 fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
@@ -402,44 +443,4 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
     writer.flush().unwrap();
 
     new_cursor
-}
-
-fn main() {
-    let mut args: Vec<String> = env::args().collect();
-    args.remove(0);
-
-    verify_dir();
-    verify_book();
-
-    if args.len() == 0 {
-        open_book()
-    } else {
-        println!("searching book for {:?}", &args);
-
-        let mut final_sections = search_book(&args);
-
-        final_sections.sort_by_key(|i| i.mentions);
-        final_sections.reverse();
-
-        println!("Found {} results", final_sections.len());
-
-        if final_sections.len() == 0 {
-            return;
-        }
-
-        let mut cursor: u32 = 0;
-        loop {
-            let content = &final_sections[cursor as usize].content;
-
-            let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
-                + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
-                + &format!(" for {:?}", args)
-                + &format!(" | Change results with <-- and --> arrow keys or A and D")
-                + &format!(" | Close The Book with C ");
-
-            let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
-
-            cursor = print_markdown(&final_sections, &text, cursor);
-        }
-    }
 }
