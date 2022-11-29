@@ -23,6 +23,6 @@ Note: This crate is still new, the results may not be perfect, and the code is a
 
 That's it. you're done. Now run `thebook what you want to search` to search for something or just `thebook` to open 'The Book' in your web browser.
 
-![screenshot](https://github.com/0xhiro/thebook/blob/master/img/screenshot.png?raw=true)
+![screenshot](https://github.com/0xhiro/thebook/blob/main/img/screenshot.png?raw=true)
 
 Made with ❤️  by [Hiro](https://twitter.com/0x1hiro) 
