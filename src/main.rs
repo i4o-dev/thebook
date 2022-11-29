@@ -345,7 +345,8 @@ fn main() {
                 + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
                 + &format!(" for {:?}", args)
                 + &format!(" | Change results with <-- and --> arrow keys or A and D")
-                + &format!(" | Close The Book with C ");
+                + &format!(" | Close The Book with C ")
+                + &format!(" | Open in browser with O ");
 
             let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
 
