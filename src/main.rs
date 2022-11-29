@@ -4,7 +4,6 @@ use crossterm::{
     style::Color::{AnsiValue, DarkCyan, Magenta, Yellow},
     terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use git2::Repository;
 use std::env;
 use std::io::stdout;
 use std::io::{self, Write};
@@ -63,14 +62,17 @@ fn book_exists(path: &String) -> bool {
 
 fn fetch_book(path: &String) {
     let url = "https://github.com/rust-lang/book";
-    println!("Cloning the book from: {}", url);
 
-    let _ = match Repository::clone(url, path) {
-        Ok(_) => {
-            println!("cloned the book from github")
-        }
-        Err(e) => panic!("failed to clone: {}", e),
-    };
+    println!("Cloning the book from: {}", url);
+    let output = Command::new("git")
+        .current_dir(get_dir_path())
+        .arg("clone")
+        .arg(url)
+        .output()
+        .expect("Failed to execute git clone");
+
+    io::stdout().write_all(&output.stdout).unwrap();
+    io::stderr().write_all(&output.stderr).unwrap();
 
     println!("installing latest mdbook");
 
@@ -78,7 +80,7 @@ fn fetch_book(path: &String) {
         .arg("install")
         .arg("mdbook")
         .output()
-        .expect("Failed to execute command");
+        .expect("Failed to execute cargo install mdbook");
 
     io::stdout().write_all(&output.stdout).unwrap();
     io::stderr().write_all(&output.stderr).unwrap();
@@ -90,7 +92,7 @@ fn fetch_book(path: &String) {
         .current_dir(path)
         .arg("build")
         .output()
-        .expect("Failed to execute command");
+        .expect("Failed to execute mdbook build");
 
     io::stdout().write_all(&output.stdout).unwrap();
     io::stderr().write_all(&output.stderr).unwrap();
@@ -474,8 +476,7 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
 //🟥🟥🟥🟥🟥🟥⬜️
 //🟥🟥🟥🟥🟥🟥⬜️
 //⬜️🟥🟥⬜️🟥🟥⬜️
-//⬜️🟥🟥⬜️🟥🟥⬜️      
-//?.
+//⬜️🟥🟥⬜️🟥🟥⬜️    .
 
 //.? ⠀
 //      ⠀⠀⠀⠀⠀⢀⣀⣀⣴⣆⣠⣤⠀⠀⠀⠀⠀⠀⠀
