@@ -8,7 +8,7 @@ description = "Search and read The Rust Book from the terminal"
 readme = "README.md"
 homepage = "https://github.com/0xhiro/thebook"
 repository = "https://github.com/0xhiro/thebook"
-keywords = ["rust", "thebook", "cli" , "learn rust", "rust book"]
+keywords = ["book", "thebook", "cli" , "learn", "rust-book"]
 categories = ["command-line-utilities"]
 
 [dependencies]
