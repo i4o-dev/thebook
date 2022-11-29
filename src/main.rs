@@ -185,7 +185,6 @@ fn parse_listings(section: &mut Section) {
     section.content = std::str::from_utf8(&new_content).unwrap().to_string();
 }
 
-// returns a list of markdown strings
 fn search_book(words: &Vec<String>) -> Vec<Section> {
     let folder_path = get_book_path() + "src";
     let files = get_files(&folder_path);
