@@ -345,8 +345,8 @@ fn main() {
             let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
                 + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
                 + &format!(" for {:?}", args)
-                + &format!(" | Change results with <-- and --> arrow keys or A and D")
-                + &format!(" | Close The Book with C ")
+                + &format!(" | Change results with <-- and --> arrow keys or H and L")
+                + &format!(" | Close The Book with Q ")
                 + &format!(" | Open in browser with O ");
 
             let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
@@ -392,7 +392,24 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
                         break;
                     }
                 }
+                KeyCode::Char('l') => {
+                    if new_cursor + 1 < length {
+                        new_cursor += 1;
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+
                 KeyCode::Char('a') => {
+                    if new_cursor != 0 {
+                        new_cursor -= 1;
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+                KeyCode::Char('h') => {
                     if new_cursor != 0 {
                         new_cursor -= 1;
                         break;
@@ -425,7 +442,13 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
 
                     std::process::exit(0x0100);
                 }
+                KeyCode::Char('q') => {
+                    terminal::disable_raw_mode().unwrap();
+                    queue!(writer, LeaveAlternateScreen).unwrap();
+                    writer.flush().unwrap();
 
+                    std::process::exit(0x0100);
+                }
                 KeyCode::Char('o') => open_book(),
 
                 _ => {
