@@ -345,9 +345,10 @@ fn main() {
             let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
                 + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
                 + &format!(" for {:?}", args)
-                + &format!(" | Change results with <-- and --> arrow keys or H and L")
+                + &format!(" | Change results with ← and → arrow keys or H and L")
+                + &format!(" | Scroll up and down with ↑ and ↓ arrow keys or J and K")
                 + &format!(" | Close The Book with Q ")
-                + &format!(" | Open in browser with O ");
+                + &format!(" | Open in web browser with O ");
 
             let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
 
@@ -384,6 +385,10 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
                 KeyCode::Down => view.try_scroll_lines(1),
                 KeyCode::PageUp => view.try_scroll_pages(-1),
                 KeyCode::PageDown => view.try_scroll_pages(1),
+
+                KeyCode::Char('j') => view.try_scroll_lines(-1),
+                KeyCode::Char('k') => view.try_scroll_lines(1),
+
                 KeyCode::Char('d') => {
                     if new_cursor + 1 < length {
                         new_cursor += 1;
