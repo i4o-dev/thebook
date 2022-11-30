@@ -344,11 +344,10 @@ fn main() {
 
             let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
                 + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
-                + &format!(" for {:?}", args)
                 + &format!(" | Change results with ← and → arrow keys or H and L")
                 + &format!(" | Scroll up and down with ↑ and ↓ arrow keys or J and K")
-                + &format!(" | Close The Book with Q ")
-                + &format!(" | Open in web browser with O ");
+                + &format!(" | Open in web browser with O ")
+                + &format!(" | Quit with Q ");
 
             let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
 
