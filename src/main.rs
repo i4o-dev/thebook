@@ -385,8 +385,8 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
                 KeyCode::PageUp => view.try_scroll_pages(-1),
                 KeyCode::PageDown => view.try_scroll_pages(1),
 
-                KeyCode::Char('j') => view.try_scroll_lines(-1),
-                KeyCode::Char('k') => view.try_scroll_lines(1),
+                KeyCode::Char('j') => view.try_scroll_lines(1),
+                KeyCode::Char('k') => view.try_scroll_lines(-1),
 
                 KeyCode::Char('d') => {
                     if new_cursor + 1 < length {
