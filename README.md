@@ -29,7 +29,7 @@ That's it. you're done. Now run `thebook what you want to search` to search for 
 
 | Command                   | Description                                                          | Example                                      
 | -----------               | -----------                                                          | -----------
-| `thebook <search query>`  | Searches for `<search query>` and renders markdown in the terminal>  | `thebook using structs`
+| `thebook <search query>`  | Searches for `<search query>` and renders markdown in the terminal   | `thebook using structs`
 | `thebook`                 | Opens the book in the default browser                                | `thebook`
 
 
