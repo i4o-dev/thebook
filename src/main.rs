@@ -35,7 +35,7 @@ fn dir_exists(path: &String) -> bool {
     if Path::new(&path).exists() {
         true
     } else {
-        println!("path does not exist");
+        println!("Path does not exist");
         false
     }
 }
@@ -55,7 +55,7 @@ fn book_exists(path: &String) -> bool {
     if Path::new(&path).exists() {
         true
     } else {
-        println!("book does not exist");
+        println!("The Book does not exist");
         false
     }
 }
@@ -81,7 +81,7 @@ fn fetch_book(path: &String) {
     io::stdout().write_all(&output.stdout).unwrap();
     io::stderr().write_all(&output.stderr).unwrap();
 
-    println!("installing latest mdbook");
+    println!("Installing latest mdbook");
 
     let output = Command::new("cargo")
         .arg("install")
@@ -94,7 +94,7 @@ fn fetch_book(path: &String) {
 
     println!("Installed mdbook");
 
-    println!("building the book with mdbook");
+    println!("Building the book with mdbook");
     let output = Command::new("mdbook")
         .current_dir(path)
         .arg("build")
@@ -104,11 +104,13 @@ fn fetch_book(path: &String) {
     io::stdout().write_all(&output.stdout).unwrap();
     io::stderr().write_all(&output.stderr).unwrap();
 
-    println!("build complete")
+    println!("Build complete");
+
+    println!("The Book has been installed");
 }
 
 fn reset_book() {
-    println!("downloading fresh copy of The Book");
+    println!("Downloading fresh copy of The Book");
 
     let book_path = get_book_path();
 
