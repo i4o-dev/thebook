@@ -15,7 +15,7 @@ use webbrowser;
 
 // i like me a big a** main file hehe!
 fn get_dir_path() -> String {
-    let path = dirs::home_dir().unwrap().to_str().unwrap().to_string() + "/.thebook/";
+    let path = dirs::home_dir().unwrap().to_str().unwrap().to_string() + "/thebook/";
     path
 }
 
