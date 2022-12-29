@@ -29,7 +29,7 @@ That's it. you're done. Now run `thebook what you want to search` to search for 
 
 | Syntax      | Description |
 | ----------- | ----------- |
-| thebook <search query>      | Searches the book for pages that mention <search query and renders markdown in the terminal>       |
+| thebook \<search query>      | Searches the book for pages that mention <search query and renders markdown in the terminal>       |
 | thebook   | Opens the book in the default browser        |
 
 
