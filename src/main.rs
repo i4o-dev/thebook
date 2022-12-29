@@ -107,6 +107,18 @@ fn fetch_book(path: &String) {
     println!("build complete")
 }
 
+fn reset_book() {
+    println!("downloading fresh copy of The Book");
+
+    let book_path = get_book_path();
+
+    std::fs::remove_dir_all(book_path).unwrap();
+
+    verify_book();
+
+    println!("The Book has been reset");
+}
+
 fn open_book(link: &String) {
     println!("opening book");
 
@@ -333,8 +345,10 @@ fn main() {
     if args.len() == 0 {
         let index_path = get_book_path() + "book/index.html";
         open_book(&index_path)
+    } else if args[0] == "--reset" {
+        reset_book();
     } else {
-        println!("searching book for {:?}", &args);
+        println!("searching book for {:?}", args);
 
         let mut final_sections = search_book(&args);
 

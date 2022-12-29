@@ -1,12 +1,12 @@
 [package]
 name = "thebook"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Hiro <yirohido@gmail.com>"]
 license = "MIT"
 description = "Search and read The Rust Book from the terminal"
 readme = "README.md"
-homepage = "https://github.com/0xhiro/thebook"
+homepage = "https://thebook.hiro.codes"
 repository = "https://github.com/0xhiro/thebook"
 keywords = ["book", "thebook", "cli" , "learn", "rust-book"]
 categories = ["command-line-utilities"]
