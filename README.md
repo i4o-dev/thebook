@@ -31,6 +31,7 @@ That's it. you're done. Now run `thebook what you want to search` to search for 
 | -----------               | -----------                                                          | -----------
 | `thebook <search query>`  | Searches for `<search query>` and renders markdown in the terminal   | `thebook using structs`
 | `thebook`                 | Opens the book in the default browser                                | `thebook`
+| `thebook --reset`         | Re-downloads a fresh copy of the book                                | `thebook --reset`
 
 
 Made with ❤️  by [Hiro](https://twitter.com/0x1hiro) 

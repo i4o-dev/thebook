@@ -60,6 +60,13 @@ fn book_exists(path: &String) -> bool {
     }
 }
 
+#[derive(Debug)]
+struct Section {
+    content: String,
+    mentions: u32,
+    link: String,
+}
+
 fn fetch_book(path: &String) {
     let url = "https://github.com/rust-lang/book";
 
@@ -100,11 +107,17 @@ fn fetch_book(path: &String) {
     println!("build complete")
 }
 
-fn open_book() {
+fn open_book(link: &String) {
     println!("opening book");
-    let index_path = get_book_path() + "book/index.html";
 
-    webbrowser::open(&index_path).unwrap();
+    if link.ends_with(".html") {
+        webbrowser::open(&link).unwrap();
+    } else {
+        let link = link.replace("src", "book");
+        let link = link.replace(".md", ".html");
+
+        webbrowser::open(&link).unwrap();
+    }
 }
 
 fn get_files(folder_path: &String) -> Vec<String> {
@@ -250,6 +263,7 @@ fn search_page(page_path: &String, queries: &Vec<String>) -> Vec<Section> {
         let new_section = Section {
             content: section,
             mentions,
+            link: page_path.clone(),
         };
 
         if new_section.content.len() > 5 {
@@ -309,12 +323,6 @@ fn search_page(page_path: &String, queries: &Vec<String>) -> Vec<Section> {
     valid_sections
 }
 
-#[derive(Debug)]
-struct Section {
-    content: String,
-    mentions: u32,
-}
-
 fn main() {
     let mut args: Vec<String> = env::args().collect();
     args.remove(0);
@@ -323,7 +331,8 @@ fn main() {
     verify_book();
 
     if args.len() == 0 {
-        open_book()
+        let index_path = get_book_path() + "book/index.html";
+        open_book(&index_path)
     } else {
         println!("searching book for {:?}", &args);
 
@@ -346,7 +355,7 @@ fn main() {
                 + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
                 + &format!(" | Change results with ← and → arrow keys or H and L")
                 + &format!(" | Scroll up and down with ↑ and ↓ arrow keys or J and K")
-                + &format!(" | Open in web browser with O ")
+                + &format!(" | Open this page in web browser with O ")
                 + &format!(" | Quit with Q ");
 
             let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
@@ -359,6 +368,7 @@ fn main() {
 fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
     let length = results.len() as u32;
     let mut new_cursor = cursor;
+    let link = &results[cursor as usize].link;
 
     let mut skin = MadSkin::default();
     skin.set_headers_fg(AnsiValue(178));
@@ -378,6 +388,15 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
     loop {
         view.write_on(&mut writer).unwrap();
         writer.flush().unwrap();
+
+        let mut quit = || {
+            terminal::disable_raw_mode().unwrap();
+            queue!(writer, LeaveAlternateScreen).unwrap();
+            writer.flush().unwrap();
+
+            std::process::exit(0x0100);
+        };
+
         match event::read() {
             Ok(Event::Key(KeyEvent { code, .. })) => match code {
                 KeyCode::Up => view.try_scroll_lines(-1),
@@ -439,21 +458,11 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
                     }
                 }
 
-                KeyCode::Char('c') => {
-                    terminal::disable_raw_mode().unwrap();
-                    queue!(writer, LeaveAlternateScreen).unwrap();
-                    writer.flush().unwrap();
+                KeyCode::Char('c') => quit(),
+                KeyCode::Char('q') => quit(),
+                KeyCode::Esc => quit(),
 
-                    std::process::exit(0x0100);
-                }
-                KeyCode::Char('q') => {
-                    terminal::disable_raw_mode().unwrap();
-                    queue!(writer, LeaveAlternateScreen).unwrap();
-                    writer.flush().unwrap();
-
-                    std::process::exit(0x0100);
-                }
-                KeyCode::Char('o') => open_book(),
+                KeyCode::Char('o') => open_book(link),
 
                 _ => {
                     println!("invalid key!")

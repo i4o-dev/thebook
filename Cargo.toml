@@ -1,6 +1,6 @@
 [package]
 name = "thebook"
-version = "0.1.6"
+version = "0.2.0"
 edition = "2021"
 authors = ["Hiro <yirohido@gmail.com>"]
 license = "MIT"
@@ -13,7 +13,7 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 dirs = "4.0.0"
-webbrowser = "0.8.2"
+webbrowser = { git = "https://github.com/amodm/webbrowser-rs" }
 termimad = "0.20.3"
 crossterm = "0.23.1"
 walkdir = "2.3.2"
