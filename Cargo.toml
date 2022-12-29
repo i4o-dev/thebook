@@ -13,7 +13,7 @@ categories = ["command-line-utilities"]
 
 [dependencies]
 dirs = "4.0.0"
-webbrowser = { git = "https://github.com/amodm/webbrowser-rs" }
+webbrowser = "0.8.2"
 termimad = "0.20.3"
 crossterm = "0.23.1"
 walkdir = "2.3.2"
