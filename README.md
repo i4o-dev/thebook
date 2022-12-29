@@ -27,10 +27,10 @@ That's it. you're done. Now run `thebook what you want to search` to search for 
 
 # COMMAND ARGUMENTS
 
-| Command                   | Description                                                      | Example                                      
-| -----------               | -----------                                                      | -----------
-| `thebook <search query>`   | Searches for <search query and renders markdown in the terminal> | `thebook using structs`
-| `thebook`                   | Opens the book in the default browser                            | `thebook`
+| Command                   | Description                                                          | Example                                      
+| -----------               | -----------                                                          | -----------
+| `thebook <search query>`  | Searches for `<search query>` and renders markdown in the terminal>  | `thebook using structs`
+| `thebook`                 | Opens the book in the default browser                                | `thebook`
 
 
 Made with ❤️  by [Hiro](https://twitter.com/0x1hiro) 
