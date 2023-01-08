@@ -15,7 +15,7 @@ If you still prefer the graphical experience of a real web browser, you can use 
 
 TheBook borrows the IMPOSTER_DETECTION_ALGORITHM from [AmongRust](https://github.com/0xhiro/amongrust) for advanced search processing and intelligent query parsing hehe! ඞ :). 
 
-Note: This crate is still new, the results may not be perfect, and the code is a little messy, but hey! it gets the job done :) Please give this project a star on [Github](https://github.com/0xhiro/thebook) and subscribe to my new [YouTube channel](https://www.youtube.com/channel/UCv3SId-GfOT7MCaHVl88SQQ) for fun programming videos.
+Note: This crate is still new, the results may not be perfect, and the code is a little messy, but hey! it gets the job done :) Please give this project a star on [Github](https://github.com/0xhiro/thebook) and subscribe to [my blog](https://hiro.codes) for fun programming content.
 
 # USAGE
 
