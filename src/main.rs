@@ -338,6 +338,22 @@ fn search_page(page_path: &String, queries: &Vec<String>) -> Vec<Section> {
 }
 
 fn main() {
+    let version = "0.2.3";
+    let help_message = r#"
+TheBook (Read and Search The Rust Book from the terminal)
+
+Usage:
+  thebook
+  thebook <your search query>
+  thebook -h | --help
+  thebook -v | --version
+
+Options:
+  -h --help      Show this screen.
+  -v --version   Show version.
+  --reset        Download latest Book
+    "#;
+
     let mut args: Vec<String> = env::args().collect();
     args.remove(0);
 
@@ -349,6 +365,10 @@ fn main() {
         open_book(&index_path)
     } else if args[0] == "--reset" {
         reset_book();
+    } else if args[0] == "-h" || args[0] == "--help" {
+        println!("{}", help_message);
+    } else if args[0] == "-v" || args[0] == "--version" {
+        println!("thebook {}", version);
     } else {
         println!("searching book for {:?}", args);
 
