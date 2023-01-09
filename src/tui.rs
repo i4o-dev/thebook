@@ -10,27 +10,44 @@ use std::io::stdout;
 use std::io::Write;
 use termimad::{Area, MadSkin, MadView};
 
-pub fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
+pub fn print_markdown(results: &Vec<Section>) {
     let length = results.len() as u32;
-    let mut new_cursor = cursor;
-    let link = &results[cursor as usize].link;
 
-    let mut skin = MadSkin::default();
-    skin.set_headers_fg(AnsiValue(178));
-    skin.bold.set_fg(Yellow);
-    skin.italic.set_fg(Magenta);
-    skin.scrollbar.thumb.set_fg(AnsiValue(178));
-    skin.code_block.set_fg(DarkCyan);
-    skin.inline_code.set_fg(DarkCyan);
-
-    let area = Area::full_screen();
-    let mut view = MadView::from(text.to_owned(), area, skin);
-
-    let mut writer = stdout(); // we could also have used stderr
+    let mut writer = stdout();
     queue!(writer, EnterAlternateScreen).unwrap();
     terminal::enable_raw_mode().unwrap();
 
+    let mut cursor = 0;
+    let mut scroll: usize = 0;
+
     loop {
+        let mut new_cursor = cursor;
+        let link = &results[cursor as usize].link;
+
+        let content = &results[cursor as usize].content;
+
+        // debug message printed under every page
+        let debug = format!("Debug: Result {} of {}", cursor + 1, results.len())
+            + &format!(" | Scored {} pts", results[cursor as usize].mentions)
+            + &format!(" | Change results with ← and → arrow keys or H and L")
+            + &format!(" | Scroll up and down with ↑ and ↓ arrow keys or J and K")
+            + &format!(" | Open this page in web browser with O ")
+            + &format!(" | Quit with Q ");
+
+        let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
+
+        let mut skin = MadSkin::default();
+        skin.set_headers_fg(AnsiValue(178));
+        skin.bold.set_fg(Yellow);
+        skin.italic.set_fg(Magenta);
+        skin.scrollbar.thumb.set_fg(AnsiValue(178));
+        skin.code_block.set_fg(DarkCyan);
+        skin.inline_code.set_fg(DarkCyan);
+
+        let area = Area::full_screen();
+        let mut view = MadView::from(text.to_owned(), area, skin);
+        view.try_scroll_lines(scroll as i32);
+
         view.write_on(&mut writer).unwrap();
         writer.flush().unwrap();
 
@@ -44,74 +61,32 @@ pub fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32
 
         match event::read() {
             Ok(Event::Key(KeyEvent { code, .. })) => match code {
-                KeyCode::Up => view.try_scroll_lines(-1),
-                KeyCode::Down => view.try_scroll_lines(1),
-                KeyCode::PageUp => view.try_scroll_pages(-1),
-                KeyCode::PageDown => view.try_scroll_pages(1),
+                KeyCode::Up | KeyCode::Char('k') | KeyCode::PageUp => view.try_scroll_lines(-1),
+                KeyCode::Down | KeyCode::Char('j') | KeyCode::PageDown => view.try_scroll_lines(1),
 
-                KeyCode::Char('j') => view.try_scroll_lines(1),
-                KeyCode::Char('k') => view.try_scroll_lines(-1),
-
-                KeyCode::Char('d') => {
+                KeyCode::Char('d') | KeyCode::Char('l') | KeyCode::Right => {
                     if new_cursor + 1 < length {
                         new_cursor += 1;
-                        break;
+                        // break;
                     } else {
-                        break;
-                    }
-                }
-                KeyCode::Char('l') => {
-                    if new_cursor + 1 < length {
-                        new_cursor += 1;
-                        break;
-                    } else {
-                        break;
+                        //  break;
                     }
                 }
 
-                KeyCode::Char('a') => {
+                KeyCode::Char('a') | KeyCode::Char('h') | KeyCode::Left => {
                     if new_cursor != 0 {
                         new_cursor -= 1;
-                        break;
+                        //  break;
                     } else {
-                        break;
-                    }
-                }
-                KeyCode::Char('h') => {
-                    if new_cursor != 0 {
-                        new_cursor -= 1;
-                        break;
-                    } else {
-                        break;
+                        //   break;
                     }
                 }
 
-                KeyCode::Right => {
-                    if new_cursor + 1 < length {
-                        new_cursor += 1;
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-                KeyCode::Left => {
-                    if new_cursor != 0 {
-                        new_cursor -= 1;
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-
-                KeyCode::Char('c') => quit(),
-                KeyCode::Char('q') => quit(),
-                KeyCode::Esc => quit(),
+                KeyCode::Char('c') | KeyCode::Char('q') | KeyCode::Esc => quit(),
 
                 KeyCode::Char('o') => open_book(link),
 
-                _ => {
-                    println!("invalid key!")
-                }
+                _ => {}
             },
             Ok(Event::Resize(..)) => {
                 queue!(writer, Clear(ClearType::All)).unwrap();
@@ -119,11 +94,9 @@ pub fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32
             }
             _ => {}
         }
+
+        scroll = view.scroll;
+
+        cursor = new_cursor;
     }
-
-    terminal::disable_raw_mode().unwrap();
-    queue!(writer, LeaveAlternateScreen).unwrap();
-    writer.flush().unwrap();
-
-    new_cursor
 }

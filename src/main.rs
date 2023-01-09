@@ -11,7 +11,7 @@ mod tui;
 use fs_utils::*;
 use tui::*;
 
-static VERSION: &str = "0.2.3";
+static VERSION: &str = "0.3.0";
 static HELP: &str = r#"
 TheBook (Read and Search The Rust Book from the terminal)
 
@@ -73,31 +73,13 @@ fn main() {
                 }
 
                 // renders the sections (markdown) in the terminal ui
-                let mut cursor: u32 = 0;
-                loop {
-                    let content = &final_sections[cursor as usize].content;
-
-                    // debug message printed under every page
-                    let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
-                        + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
-                        + &format!(" | Change results with ← and → arrow keys or H and L")
-                        + &format!(" | Scroll up and down with ↑ and ↓ arrow keys or J and K")
-                        + &format!(" | Open this page in web browser with O ")
-                        + &format!(" | Quit with Q ");
-
-                    let text =
-                        content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
-
-                    // FIXME: stop continuos printing
-                    cursor = print_markdown(&final_sections, &text, cursor);
-                }
+                print_markdown(&final_sections);
             }
         }
     }
 }
 
 // searches through the book and returns sections that mention the search query
-// TODO: reward pages that satisfy certain search queries exclusively
 fn search_book(words: &Vec<String>) -> Vec<Section> {
     let folder_path = get_book_path() + "src"; // get a valid path to the book
     let files = get_files(&folder_path); // get a list of all pages in the book
