@@ -1,73 +1,113 @@
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent},
-    queue,
-    style::Color::{AnsiValue, DarkCyan, Magenta, Yellow},
-    terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
+use std::{
+    env,
+    io::{self, Write},
+    process::Command,
 };
-use std::env;
-use std::io::stdout;
-use std::io::{self, Write};
-use std::path::Path;
-use std::process::Command;
-use termimad::{Area, MadSkin, MadView};
-use walkdir::WalkDir;
 use webbrowser;
 
-// i like me a big a** main file hehe!
-fn get_dir_path() -> String {
-    let path = dirs::home_dir().unwrap().to_str().unwrap().to_string() + "/thebook/";
-    path
-}
+mod fs_utils;
+mod tui;
 
-fn get_book_path() -> String {
-    let path = get_dir_path() + "book/";
-    path
-}
+use fs_utils::*;
+use tui::*;
 
-fn verify_dir() {
-    let path = get_dir_path();
-    if !dir_exists(&path) {
-        create_dir(&path);
-    }
-}
+static VERSION: &str = "0.2.3";
+static HELP: &str = r#"
+TheBook (Read and Search The Rust Book from the terminal)
 
-fn dir_exists(path: &String) -> bool {
-    if Path::new(&path).exists() {
-        true
-    } else {
-        println!("Path does not exist");
-        false
-    }
-}
+Usage:
+  thebook
+  thebook <your search query>
+  thebook -h | --help
+  thebook -v | --version
 
-fn create_dir(path: &String) {
-    std::fs::create_dir(path).unwrap();
-}
-
-fn verify_book() {
-    let path = get_book_path();
-    if !book_exists(&path) {
-        fetch_book(&path);
-    }
-}
-
-fn book_exists(path: &String) -> bool {
-    if Path::new(&path).exists() {
-        true
-    } else {
-        println!("The Book does not exist");
-        false
-    }
-}
+Options:
+  -h --help      Show this screen.
+  -v --version   Show version.
+  --reset        Download latest Book
+    "#;
 
 #[derive(Debug)]
-struct Section {
+pub struct Section {
     content: String,
     mentions: u32,
     link: String,
 }
 
-fn fetch_book(path: &String) {
+fn main() {
+    let mut args: Vec<String> = env::args().collect();
+    args.remove(0);
+
+    verify_dir();
+    verify_book();
+
+    if args.len() == 0 {
+        let index_path = get_book_path() + "book/index.html";
+        open_book(&index_path)
+    } else if args[0] == "--reset" {
+        reset_book();
+    } else if args[0] == "-h" || args[0] == "--help" {
+        println!("{}", HELP);
+    } else if args[0] == "-v" || args[0] == "--version" {
+        println!("thebook {}", VERSION);
+    } else {
+        println!("searching book for {:?}", args);
+
+        let mut final_sections = search_book(&args);
+
+        final_sections.sort_by_key(|i| i.mentions);
+        final_sections.reverse();
+
+        println!("Found {} results", final_sections.len());
+
+        if final_sections.len() == 0 {
+            return;
+        }
+
+        let mut cursor: u32 = 0;
+        loop {
+            let content = &final_sections[cursor as usize].content;
+
+            let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
+                + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
+                + &format!(" | Change results with ← and → arrow keys or H and L")
+                + &format!(" | Scroll up and down with ↑ and ↓ arrow keys or J and K")
+                + &format!(" | Open this page in web browser with O ")
+                + &format!(" | Quit with Q ");
+
+            let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
+
+            cursor = print_markdown(&final_sections, &text, cursor);
+        }
+    }
+}
+
+fn reset_book() {
+    println!("Downloading latest copy of The Book");
+
+    let book_path = get_book_path();
+
+    std::fs::remove_dir_all(book_path).unwrap();
+
+    verify_book();
+
+    println!("The Book has been reset");
+}
+
+fn open_book(link: &String) {
+    println!("opening book");
+
+    if link.ends_with(".html") {
+        webbrowser::open(&link).unwrap();
+    } else {
+        let link = link.replace("src", "book");
+        let link = link.replace(".md", ".html");
+
+        webbrowser::open(&link).unwrap();
+    }
+}
+
+pub fn fetch_book(path: &String) {
     let url = "https://github.com/rust-lang/book";
 
     println!("Cloning the book from: {}", url);
@@ -107,47 +147,6 @@ fn fetch_book(path: &String) {
     println!("Build complete");
 
     println!("The Book has been installed");
-}
-
-fn reset_book() {
-    println!("Downloading fresh copy of The Book");
-
-    let book_path = get_book_path();
-
-    std::fs::remove_dir_all(book_path).unwrap();
-
-    verify_book();
-
-    println!("The Book has been reset");
-}
-
-fn open_book(link: &String) {
-    println!("opening book");
-
-    if link.ends_with(".html") {
-        webbrowser::open(&link).unwrap();
-    } else {
-        let link = link.replace("src", "book");
-        let link = link.replace(".md", ".html");
-
-        webbrowser::open(&link).unwrap();
-    }
-}
-
-fn get_files(folder_path: &String) -> Vec<String> {
-    let mut files: Vec<String> = Vec::new();
-
-    for entry in WalkDir::new(folder_path) {
-        let entry = entry.unwrap();
-
-        let path = entry.path().to_str().unwrap();
-
-        if path.ends_with(".md") {
-            files.push(path.to_string());
-        }
-    }
-
-    files
 }
 
 fn get_code_block(flag: String) -> String {
@@ -337,188 +336,6 @@ fn search_page(page_path: &String, queries: &Vec<String>) -> Vec<Section> {
     valid_sections
 }
 
-fn main() {
-    let version = "0.2.3";
-    let help_message = r#"
-TheBook (Read and Search The Rust Book from the terminal)
-
-Usage:
-  thebook
-  thebook <your search query>
-  thebook -h | --help
-  thebook -v | --version
-
-Options:
-  -h --help      Show this screen.
-  -v --version   Show version.
-  --reset        Download latest Book
-    "#;
-
-    let mut args: Vec<String> = env::args().collect();
-    args.remove(0);
-
-    verify_dir();
-    verify_book();
-
-    if args.len() == 0 {
-        let index_path = get_book_path() + "book/index.html";
-        open_book(&index_path)
-    } else if args[0] == "--reset" {
-        reset_book();
-    } else if args[0] == "-h" || args[0] == "--help" {
-        println!("{}", help_message);
-    } else if args[0] == "-v" || args[0] == "--version" {
-        println!("thebook {}", version);
-    } else {
-        println!("searching book for {:?}", args);
-
-        let mut final_sections = search_book(&args);
-
-        final_sections.sort_by_key(|i| i.mentions);
-        final_sections.reverse();
-
-        println!("Found {} results", final_sections.len());
-
-        if final_sections.len() == 0 {
-            return;
-        }
-
-        let mut cursor: u32 = 0;
-        loop {
-            let content = &final_sections[cursor as usize].content;
-
-            let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
-                + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
-                + &format!(" | Change results with ← and → arrow keys or H and L")
-                + &format!(" | Scroll up and down with ↑ and ↓ arrow keys or J and K")
-                + &format!(" | Open this page in web browser with O ")
-                + &format!(" | Quit with Q ");
-
-            let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
-
-            cursor = print_markdown(&final_sections, &text, cursor);
-        }
-    }
-}
-
-fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
-    let length = results.len() as u32;
-    let mut new_cursor = cursor;
-    let link = &results[cursor as usize].link;
-
-    let mut skin = MadSkin::default();
-    skin.set_headers_fg(AnsiValue(178));
-    skin.bold.set_fg(Yellow);
-    skin.italic.set_fg(Magenta);
-    skin.scrollbar.thumb.set_fg(AnsiValue(178));
-    skin.code_block.set_fg(DarkCyan);
-    skin.inline_code.set_fg(DarkCyan);
-
-    let area = Area::full_screen();
-    let mut view = MadView::from(text.to_owned(), area, skin);
-
-    let mut writer = stdout(); // we could also have used stderr
-    queue!(writer, EnterAlternateScreen).unwrap();
-    terminal::enable_raw_mode().unwrap();
-
-    loop {
-        view.write_on(&mut writer).unwrap();
-        writer.flush().unwrap();
-
-        let mut quit = || {
-            terminal::disable_raw_mode().unwrap();
-            queue!(writer, LeaveAlternateScreen).unwrap();
-            writer.flush().unwrap();
-
-            std::process::exit(0x0100);
-        };
-
-        match event::read() {
-            Ok(Event::Key(KeyEvent { code, .. })) => match code {
-                KeyCode::Up => view.try_scroll_lines(-1),
-                KeyCode::Down => view.try_scroll_lines(1),
-                KeyCode::PageUp => view.try_scroll_pages(-1),
-                KeyCode::PageDown => view.try_scroll_pages(1),
-
-                KeyCode::Char('j') => view.try_scroll_lines(1),
-                KeyCode::Char('k') => view.try_scroll_lines(-1),
-
-                KeyCode::Char('d') => {
-                    if new_cursor + 1 < length {
-                        new_cursor += 1;
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-                KeyCode::Char('l') => {
-                    if new_cursor + 1 < length {
-                        new_cursor += 1;
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-
-                KeyCode::Char('a') => {
-                    if new_cursor != 0 {
-                        new_cursor -= 1;
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-                KeyCode::Char('h') => {
-                    if new_cursor != 0 {
-                        new_cursor -= 1;
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-
-                KeyCode::Right => {
-                    if new_cursor + 1 < length {
-                        new_cursor += 1;
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-                KeyCode::Left => {
-                    if new_cursor != 0 {
-                        new_cursor -= 1;
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-
-                KeyCode::Char('c') => quit(),
-                KeyCode::Char('q') => quit(),
-                KeyCode::Esc => quit(),
-
-                KeyCode::Char('o') => open_book(link),
-
-                _ => {
-                    println!("invalid key!")
-                }
-            },
-            Ok(Event::Resize(..)) => {
-                queue!(writer, Clear(ClearType::All)).unwrap();
-                view.resize(&Area::full_screen());
-            }
-            _ => {}
-        }
-    }
-
-    terminal::disable_raw_mode().unwrap();
-    queue!(writer, LeaveAlternateScreen).unwrap();
-    writer.flush().unwrap();
-
-    new_cursor
-}
-
 //.?
 //             ⣠⣤⣤⣤⣤⣤⣶⣦⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀
 //⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡿⠛⠉⠙⠛⠛⠛⠛⠻⢿⣿⣷⣤⡀⠀⠀⠀⠀⠀
@@ -539,42 +356,4 @@ fn print_markdown(results: &Vec<Section>, text: &String, cursor: u32) -> u32 {
 //⠀⠀⠀⠀⠀⠀⠀⣿⣿⠀⠀⠀⠀⠀⣿⣿⡇⠀⢹⣿⡆⠀⠀⠀⣸⣿⠇⠀⠀⠀
 //⠀⠀⠀⠀⠀⠀⠀⢿⣿⣦⣄⣀⣠⣴⣿⣿⠁⠀⠈⠻⣿⣿⣿⣿⡿⠏⠀⠀⠀⠀
 //⠀⠀⠀⠀⠀⠀⠀⠈⠛⠻⠿⠿⠿⠿⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-//?.
-
-//.?
-//⬜️⬜️🟥🟥🟥⬜️⬜️
-//⬜️🟥🟥🟥🟥🟥⬜️
-//🟥🟥⬛️⬛️⬛️🟥⬜️
-//🟥🟥🟥🟥🟥🟥⬜️
-//🟥🟥🟥🟥🟥🟥⬜️
-//⬜️🟥🟥⬜️🟥🟥⬜️
-//⬜️🟥🟥⬜️🟥🟥⬜️    .
-
-//.? ⠀
-//      ⠀⠀⠀⠀⠀⢀⣀⣀⣴⣆⣠⣤⠀⠀⠀⠀⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣻⣿⣯⣘⠹⣧⣤⡀⠀⠀⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠿⢿⣿⣷⣾⣯⠉⠀⠀⠀⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⣿⠜⣿⡍⠀⠀⠀⠀⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⠁⠀⠘⣿⣆⠀⠀⠀⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⡟⠃⡄⠀⠘⢿⣆⠀⠀⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⣿⣁⣋⣈ ⣤⣮⣿⣧⡀⠀
-//⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣤⣤⣤⣤⣤⣶⣦⣤⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⡿⠛⠉⠙⠛⠛⠛⠛⠻⢿⣿⣷⣤⡀⠀⠀⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⠋⠀⠀⠀⠀⠀⠀⠀⢀⣀⣀⠈⢻⣿⣿⡄⠀⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⣸⣿⡏⠀⠀⠀⣠⣶⣾⣿⣿⣿⠿⠿⠿⢿⣿⣿⣿⣄⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⣿⣿⠁⠀⠀⢰⣿⣿⣯⠁⠀⠀⠀⠀⠀⠀⠀⠈⠙⢿⣷⡄⠀
-//⠀⠀⣀⣤⣴⣶⣶⣿⡟⠀⠀⠀⢸⣿⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣷⠀
-//⠀⢰⣿⡟⠋⠉⣹⣿⡇⠀⠀⠀⠘⣿⣿⣿⣿⣷⣦⣤⣤⣤⣶⣶⣶⣶⣿⣿⣿⠀
-//⠀⢸⣿⡇⠀⠀⣿⣿⡇⠀⠀⠀⠀⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠃⠀
-//⠀⣸⣿⡇⠀⠀⣿⣿⡇⠀⠀⠀⠀⠀⠉⠻⠿⣿⣿⣿⣿⡿⠿⠿⠛⢻⣿⡇⠀⠀
-//⠀⣿⣿⠁⠀⠀⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣧⠀⠀
-//⠀⣿⣿⠀⠀⠀⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⠀⠀
-//⠀⣿⣿⠀⠀⠀⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⣿⠀⠀
-//⠀⢿⣿⡆⠀⠀⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡇⠀⠀
-//⠀⠸⣿⣧⡀⠀⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⠃⠀⠀
-//⠀⠀⠛⢿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⣰⣿⣿⣷⣶⣶⣶⣶⠶⠀⢠⣿⣿⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⣿⣿⠀⠀⠀⠀⠀⣿⣿⡇⠀⣽⣿⡏⠁⠀⠀⢸⣿⡇⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⣿⣿⠀⠀⠀⠀⠀⣿⣿⡇⠀⢹⣿⡆⠀⠀⠀⣸⣿⠇⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⢿⣿⣦⣄⣀⣠⣴⣿⣿⠁⠀⠈⠻⣿⣿⣿⣿⡿⠏⠀⠀⠀⠀
-//⠀⠀⠀⠀⠀⠀⠀⠈⠛⠻⠿⠿⠿⠿⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 //?.
