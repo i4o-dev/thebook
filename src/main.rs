@@ -150,7 +150,6 @@ fn get_code_block(flag: &String) -> String {
     code
 }
 
-// FIXME: Fix html <span> bugs
 // mutates all sections to add code examples to sections that need them
 fn parse_listings(section: &mut Section) {
     let content = &section.content.as_bytes();
@@ -158,12 +157,13 @@ fn parse_listings(section: &mut Section) {
 
     let mut flag: Vec<u8> = Vec::new();
 
-    let mut writing: bool = true;
+    let mut writing1: bool = true;
+    let mut writing2: bool = true;
 
     // uses the IMPOSTER DETECTION ALGORITHM to identify code samples uwu
     for (index, character) in content.iter().enumerate() {
         if index + 2 < content.len() && content[index + 1] == b'{' && content[index + 2] == b'{' {
-            writing = false;
+            writing1 = false;
         }
 
         if index > 0 && content[index - 1] == b'}' && content[index - 2] == b'}' {
@@ -180,14 +180,22 @@ fn parse_listings(section: &mut Section) {
 
             flag = Vec::new();
 
-            writing = true;
+            writing1 = true;
         }
 
-        if !writing {
+        if !writing1 {
             flag.push(*character);
         }
 
-        if writing {
+        // must be below the above condition for eliminating html tags
+        if index < content.len() && content[index] == b'<' {
+            writing2 = false
+        }
+        if index > 1 && content[index - 1] == b'>' {
+            writing2 = true
+        }
+
+        if writing1 && writing2 {
             new_content.push(*character);
         }
     }
