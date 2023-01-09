@@ -44,40 +44,49 @@ fn main() {
     if args.len() == 0 {
         let index_path = get_book_path() + "book/index.html";
         open_book(&index_path)
-    } else if args[0] == "--reset" {
-        reset_book();
-    } else if args[0] == "-h" || args[0] == "--help" {
-        println!("{}", HELP);
-    } else if args[0] == "-v" || args[0] == "--version" {
-        println!("thebook {}", VERSION);
     } else {
-        println!("searching book for {:?}", args);
+        let flag = args[0].as_str();
 
-        let mut final_sections = search_book(&args);
+        match flag {
+            "--reset" => reset_book(),
+            "-h" | "--help" => {
+                println!("{}", HELP);
+            }
 
-        final_sections.sort_by_key(|i| i.mentions);
-        final_sections.reverse();
+            "-v" | "--version" => {
+                println!("thebook {}", VERSION);
+            }
+            _ => {
+                println!("searching book for {:?}", args);
 
-        println!("Found {} results", final_sections.len());
+                let mut final_sections = search_book(&args);
 
-        if final_sections.len() == 0 {
-            return;
-        }
+                final_sections.sort_by_key(|i| i.mentions);
+                final_sections.reverse();
 
-        let mut cursor: u32 = 0;
-        loop {
-            let content = &final_sections[cursor as usize].content;
+                println!("Found {} results", final_sections.len());
 
-            let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
-                + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
-                + &format!(" | Change results with ← and → arrow keys or H and L")
-                + &format!(" | Scroll up and down with ↑ and ↓ arrow keys or J and K")
-                + &format!(" | Open this page in web browser with O ")
-                + &format!(" | Quit with Q ");
+                if final_sections.len() == 0 {
+                    return;
+                }
 
-            let text = content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
+                let mut cursor: u32 = 0;
+                loop {
+                    let content = &final_sections[cursor as usize].content;
 
-            cursor = print_markdown(&final_sections, &text, cursor);
+                    let debug = format!("Debug: Result {} of {}", cursor + 1, final_sections.len())
+                        + &format!(" | Scored {} pts", final_sections[cursor as usize].mentions)
+                        + &format!(" | Change results with ← and → arrow keys or H and L")
+                        + &format!(" | Scroll up and down with ↑ and ↓ arrow keys or J and K")
+                        + &format!(" | Open this page in web browser with O ")
+                        + &format!(" | Quit with Q ");
+
+                    let text =
+                        content.clone() + "\n" + r#"```text"# + "\n" + &debug + "\n" + r#"```"#;
+
+                    cursor = print_markdown(&final_sections, &text, cursor);
+                }
+            }
         }
     }
 }
