@@ -8,7 +8,7 @@
 ![GitHub top language](https://img.shields.io/github/languages/top/0xhiro/thebook)
 
 TheBook is a command line utility that allows you to SEARCH and READ [The Rust Programming Language](https://doc.rust-lang.org/book/) (popularly known as 'The Book' ) from the terminal.
-Ever wanted to quickly look up how to spawn threads, or how to declare Structs in Rust? TheBook allows you to do so by simply typing `thebook spawn threads` or `thebook structs`.
+Ever wanted to quickly look up how to spawn threads, or how to define Structs in Rust? TheBook allows you to do so by simply typing `thebook spawn threads` or `thebook structs`.
 TheBook renders markdown in the terminal and provides a browser-like experience. It is geared towards Rust beginners who are not quite familiar with the Rust syntax, and Rust experts who want the luxury of typing a few commands in the terminal to look up a certain Rust concept.
 
 If you still prefer the graphical experience of a real web browser, you can use TheBook as a simple 'The Book' launcher. Just run `thebook` in the terminal without any arguments, and 'The Book' will automatically open in your web browser.
