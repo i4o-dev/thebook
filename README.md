@@ -34,4 +34,4 @@ That's it. you're done. Now run `thebook what you want to search` to search for 
 | `thebook --reset`         | Re-downloads a fresh copy of the book                                | `thebook --reset`
 
 
-Made with ❤️  by [Hiro](https://twitter.com/0x1hiro) 
+Made with ❤️  by [0xHiro](https://twitter.com/hiro_codes) 
